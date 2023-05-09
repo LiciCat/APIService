@@ -1,144 +1,120 @@
+const functions = require("firebase-functions");
+const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
+const fs = require("fs");
+const cors = require('cors')({ origin: true });
+//const fs = require('fs');
 
-// // Create and deploy your first functions
-// // https://firebase.google.com/docs/functions/get-started
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+exports.generatePDF = functions.https.onRequest(async (req, res) => {
 
-//const functions = require('firebase-functions');
+    if (req.method === 'GET') {
+        // Handle GET request
+        //res.send('Hello World! This tests the PDF');
 
-//exports.helloWorld = functions.https.onRequest((req, res) => {
-//    res.send('Hello World!');
-//});
-const functions = require('firebase-functions');
-const PDFDocument = require('pdfkit');
-const blobStream  = require('blob-stream');
 
-exports.generatePDF = functions.https.onRequest((req, res) => {
-    // Parse the JSON request
-    const data = req.body;
+        console.log("--------------------NEW REQUEST--------------------");
 
-    // Create a new PDF document
-    const doc = new PDFDocument();
-    const stream = doc.pipe(blobStream());
+        cors(req, res, async () => {
+            const {data} = req.body;
 
-    // Add content to the PDF document
-    doc.fontSize(25).text(data.title);
-    doc.fontSize(16).text(data.description);
+            // Create a new PDFDocument
+            const pdfDoc = await PDFDocument.create();
 
-    // Finalize the PDF document
-    doc.end();
+            // Set the font for the document
+            const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Return the PDF document to the client
-    stream.on('finish', () => {
-        const pdf = stream.toBlob('application/pdf');
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename="document.pdf"');
-        res.send(pdf);
-    });
-});
+            // Add a new page to the document
+            const page = pdfDoc.addPage([600, 800]);
 
-//const functions = require('firebase-functions');
-const pdfMake = require('pdfmake');
-//const cors = require('cors')({origin: true});
+            // Draw text on the page
 
+            page.drawText('Hello, World!', {
+                x: 50,
+                y: 700,
+                size: 50,
+                font,
+                color: rgb(1, 0, 0), // red color
+            });
+
+
+
+            // Get the PDF file as a buffer
+            const pdfBytes = await pdfDoc.save();
+
+            console.log("PDF BYTES:");
+            console.log(pdfBytes);
+
+
+            // Set the response headers to indicate that this is a PDF document
+            //res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'attachment; filename=pdfDoc.pdf');
+
+            console.log("HEADERS:");
+            console.log(res.getHeaders());
 /*
-exports.createPDF = functions.https.onRequest((request, response) => {
-    cors(request, response, () => {
-        // Get data from the request body
-        //const data = request.body;
-
-        // Sample JSON object
-        const data = {
-            name: "John Doe",
-            email: "john.doe@example.com",
-            phone: "1234567890"
-        };
+            // Send the PDF bytes array as the response body
+            var response = {
+                "pdf": pdfBytes
+            };
+             */
+            res.end(pdfBytes);
 
 
-        // Define the PDF document definition
-        const docDefinition = {
-            content: [
-                { text: 'User Information', style: 'header' },
-                { text: `Name: ${data.name}` },
-                { text: `Email: ${data.email}` },
-                { text: `Phone: ${data.phone}` }
-            ],
-            styles: {
-                header: {
-                    fontSize: 18,
-                    bold: true,
-                    margin: [0, 0, 0, 10]
-                }
-            }
-        };
 
-        // Create a PDF document using the document definition
-        const pdfDoc = pdfMake.createPdf(docDefinition);
 
-        // Generate the PDF file and send it back to the client
-        pdfDoc.getBuffer((buffer) => {
-            response.setHeader('Content-Type', 'application/pdf');
-            response.setHeader('Content-Disposition', `attachment; filename=${data.name}.pdf`);
-            response.send(buffer);
         });
-    });
+    }
+
+
+
+    else if (req.method === 'POST') {
+        // Handle POST request
+
+        console.log("--------------------NEW REQUEST--------------------");
+
+        cors(req, res, async () => {
+            const {data} = req.body;
+
+            // Create a new PDFDocument
+            const pdfDoc = await PDFDocument.create();
+
+            // Set the font for the document
+            const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+            // Add a new page to the document
+            const page = pdfDoc.addPage([600, 800]);
+
+            // Draw text on the page
+            page.drawText('Hello, World!', {
+                x: 50,
+                y: 700,
+                size: 50,
+                font,
+                color: rgb(1, 0, 0), // red color
+            });
+
+            // Get the PDF file as a buffer
+            const pdfBytes = await pdfDoc.save();
+
+            console.log("PDF BYTES:");
+            console.log(pdfBytes);
+
+
+            // Set the response headers to indicate that this is a PDF document
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'attachment; filename=pdfDoc.pdf');
+
+            console.log("HEADERS:");
+            console.log(res.getHeaders());
+
+            // Send the PDF bytes array as the response body
+            res.send(pdfBytes);
+        });
+    }
+    else {
+        res.status(405).send('Method Not Allowed');
+    }
 });
 
--------------------------------------------------------------------------
-*/
 
-const pdfFonts = require('vfs_fonts');
 
-pdfMake.addVirtualFileSystem(pdfFonts);
 
-const fs = require('fs');
-
-// Define the font that you want to use
-const arial = {
-    Arial: {
-        normal: 'C:/Windows/Fonts/Arial-Regular.ttf',
-        bold: 'C:/Windows/Fonts/Arial-Bold.ttf',
-        italics: 'C:/Windows/Fonts/Arial-Italic.ttf',
-        bolditalics: 'C:/Windows/Fonts/Arial-BoldItalic.ttf'
-    }
-};
-
-// Sample JSON object
-const data = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "1234567890"
-};
-
-// Define the PDF document definition
-const docDefinition = {
-    content: [
-        { text: 'User Information', style: 'header' },
-        { text: `Name: ${data.name}` },
-        { text: `Email: ${data.email}` },
-        { text: `Phone: ${data.phone}` }
-    ],
-    styles: {
-        header: {
-            fontSize: 18,
-            bold: true,
-            margin: [0, 0, 0, 10],
-            font: 'Arial'
-        }
-    },
-    defaultStyle: {
-        font: 'Arial'
-    },
-    fonts: arial
-};
-
-// Create a PDF document using the document definition
-const printer = new pdfMake();
-const pdfDoc = printer.createPdfKitDocument(docDefinition);
-
-// Generate the PDF file and download it
-pdfDoc.pipe(fs.createWriteStream('output.pdf'));
-pdfDoc.end();
