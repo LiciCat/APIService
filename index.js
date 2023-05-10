@@ -1,8 +1,6 @@
 const functions = require("firebase-functions");
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
-const fs = require("fs");
 const cors = require('cors')({ origin: true });
-//const fs = require('fs');
 
 exports.generatePDF = functions.https.onRequest(async (req, res) => {
 
@@ -10,11 +8,9 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
         // Handle GET request
         //res.send('Hello World! This tests the PDF');
 
-
         console.log("--------------------NEW REQUEST--------------------");
 
         cors(req, res, async () => {
-            const {data} = req.body;
 
             // Create a new PDFDocument
             const pdfDoc = await PDFDocument.create();
@@ -30,12 +26,10 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
             page.drawText('Hello, World!', {
                 x: 50,
                 y: 700,
-                size: 50,
+                size: 20,
                 font,
-                color: rgb(1, 0, 0), // red color
+                color: rgb(0, 0, 0), // red color
             });
-
-
 
             // Get the PDF file as a buffer
             const pdfBytes = await pdfDoc.save();
@@ -43,23 +37,13 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
             console.log("PDF BYTES:");
             console.log(pdfBytes);
 
-
             // Set the response headers to indicate that this is a PDF document
-            //res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', 'attachment; filename=pdfDoc.pdf');
 
             console.log("HEADERS:");
             console.log(res.getHeaders());
-/*
-            // Send the PDF bytes array as the response body
-            var response = {
-                "pdf": pdfBytes
-            };
-             */
+
             res.end(pdfBytes);
-
-
-
 
         });
     }
@@ -72,43 +56,106 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
         console.log("--------------------NEW REQUEST--------------------");
 
         cors(req, res, async () => {
-            const {data} = req.body;
 
-            // Create a new PDFDocument
-            const pdfDoc = await PDFDocument.create();
+            const data = req.body;
 
-            // Set the font for the document
-            const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+            console.log("Data:", data);
+            console.log("Type of Data:", typeof data);
 
-            // Add a new page to the document
-            const page = pdfDoc.addPage([600, 800]);
+            if (data) {
+                try {
+                    const jsonObject = JSON.parse(data);
 
-            // Draw text on the page
-            page.drawText('Hello, World!', {
-                x: 50,
-                y: 700,
-                size: 50,
-                font,
-                color: rgb(1, 0, 0), // red color
-            });
+                    // Create a new PDFDocument
+                    const pdfDoc = await PDFDocument.create();
 
-            // Get the PDF file as a buffer
-            const pdfBytes = await pdfDoc.save();
+                    // Set the font for the document
+                    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-            console.log("PDF BYTES:");
-            console.log(pdfBytes);
+                    // Add a new page to the document
+                    const page = pdfDoc.addPage([600, 800]);
 
+                    let cursor = 700;
+                    // Draw text on the page
+                    if (jsonObject.hasOwnProperty('esdeveniment')) {
+                        console.log("escrivint esdeveniment");
+                        console.log(jsonObject.esdeveniment);
+                        page.drawText(jsonObject.esdeveniment+"\n", {
+                            x: 50,
+                            y: cursor,
+                            size: 20,
+                            font,
+                            color: rgb(0, 0, 0), // black color
+                        });
+                        cursor = cursor - 20;
+                    }
 
-            // Set the response headers to indicate that this is a PDF document
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', 'attachment; filename=pdfDoc.pdf');
+                    if (jsonObject.hasOwnProperty('data')) {
+                        console.log("escrivint data");
+                        console.log(jsonObject.data);
+                        page.drawText(jsonObject.data, {
+                            x: 50,
+                            y: cursor,
+                            size: 20,
+                            font,
+                            color: rgb(0, 0, 0), // black color
+                        });
+                        cursor = cursor - 20;
+                    }
 
-            console.log("HEADERS:");
-            console.log(res.getHeaders());
+                    if (jsonObject.hasOwnProperty('hora')) {
+                        console.log("escrivint hora");
+                        console.log(jsonObject.hora);
+                        page.drawText(jsonObject.hora, {
+                            x: 50,
+                            y: cursor,
+                            size: 20,
+                            font,
+                            color: rgb(0, 0, 0), // black color
+                        });
+                        cursor = cursor - 20;
+                    }
 
-            // Send the PDF bytes array as the response body
-            res.send(pdfBytes);
+                    if (jsonObject.hasOwnProperty('nom')) {
+                        console.log("escrivint nom");
+                        console.log(jsonObject.nom);
+                        page.drawText(jsonObject.nom, {
+                            x: 50,
+                            y: cursor,
+                            size: 20,
+                            font,
+                            color: rgb(0, 0, 0), // black color
+                        });
+                        cursor = cursor - 20;
+                    }
+
+                    // Get the PDF file as a buffer
+                    const pdfBytes = await pdfDoc.save();
+
+                    console.log("PDF BYTES:");
+                    console.log(pdfBytes);
+
+                    // Set the response headers to indicate that this is a PDF document
+                    res.setHeader('Content-Disposition', 'attachment; filename=pdfDoc.pdf');
+
+                    console.log("HEADERS:");
+                    console.log(res.getHeaders());
+
+                    res.end(pdfBytes);
+
+                } catch (error) {
+                    console.error('Invalid JSON string:', error);
+                    res.status(400).send('Invalid JSON');
+                }
+            } else {
+                console.error('No data provided');
+                res.status(400).send('No data provided');
+            }
+
         });
+
+        console.log('-----------DONE--------------');
+
     }
     else {
         res.status(405).send('Method Not Allowed');
