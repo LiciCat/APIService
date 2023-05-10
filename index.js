@@ -70,8 +70,6 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
                 try {
                     const jsonObject = JSON.parse(data);
 
-                    const qrCodeBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADDUlEQVR4nO2cS27bShBFT6UJeEgBbwFeCrUzI0vKDsilaAEGmkMDFO4bdHWTjkeJDEqhigODHx2oGyrU51bRJv74mH78OQMBBRRQQAEFFNAxIfOjw87lssPsBHaeO2CuHzjfZXkB7Q8NkqQMTCfQCGjkahrL8yRJ0mdov+UFtD80NwfA1c+GnGT2+mGA+427LS+gu0FSTmLIHkk0zh5Jvv2bAvo3oJI4TK8fBv2CnUlfFYt/bE8B/Q3US2v2wHDpAJLKJYCk5X7LC2hvaDIzLy6KU0hiuHTYW04CrqXUuNfyAtoPKtniGhgES40am3ufI8eD7ymgWyBKVTmsIaFfSjG6eUqvkm2WKnV88D0FdAvEqjNo7CU3hn7xxMHtwM+KKhEWcWSo+ohcswf6hWIRYyszytNqL2ERh4aaj/DfXGP5s6Cxr55hxIWK8BHHh2ogaE5hyOBRo2pVGklyAwmLODrUcsdlaxvKqXoLoDiP8BHPAVU7IHmnq1UdUqb5jeQpRFjE00C9y9b6ecKbXGeS7C1fzZ/O0Q1/Imi4vIjJOmDta7Rjsg6m11CxnwcyOwH0kr1J0rgxi+TJREk577K8gHZXsaF/N4aLocnSwqBrJ+YOwYeVy2n1Gg++p4BugZqKrSpOfc4xi1KZkzzHjMzy6FCrOVsjI9MiRNKqYrtMFRZxdGjT6fK+Rv5Nkqodjo1k8eB7CugWqM1OJhl0i2DpoM/A/CImA6YzMPzqsGHcd3kB7Q61ThfeyGh5hKtW+tIcDx9xaGg7AVEShxo/vK/RBic8foRFHBxCn49yc2MW+m1mIizi4FDJI6rUkBaG0bUHGy4G9O8dzP8tsE5lP/ieAvoGqLSxMuWdLnvL4PN17Sz6Gs8B1VpjPsHwC2B+kQGI+eQTt0Wu7HP1JQ++p4Bugbqvt67G9CqMfukoZWn/3om5ydgPvqeAvhPyOZnZX/ArrVBI8mbYnZcX0G5Qm5casr/EtTY7i21E7/M5oM10PrRelitU67t9dS43qs/DQxb/mSyggAIKKKCAAvpL6H8z7GIAtV7FHAAAAABJRU5ErkJggg=='
-
                         const jpgUrl = 'http://agenda.cultura.gencat.cat/content/dam/agenda/articles/2023/04/14/006/000men(3).jpg';
                         const agent = new https.Agent({ rejectUnauthorized: false });
                         const response = await axios.get(jpgUrl, { responseType: 'arraybuffer', httpsAgent: agent });
@@ -94,13 +92,6 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
 
                     // Add a new page to the document
                     const page = pdfDoc.addPage([600, 800]);
-
-                    // Decode the base64 string into a Uint8Array
-                    const qrCodeBytes = Uint8Array.from(atob(qrCodeBase64), (c) => c.charCodeAt(0));
-
-                    // Embed the QR code image in the PDF
-                    const qrCodeImage = await pdfDoc.embedPng(qrCodeBytes);
-                    const qrCodeDims = qrCodeImage.scale(0.5);
 
                     let cursor = 700;
                     // Draw text on the page
@@ -156,22 +147,40 @@ exports.generatePDF = functions.https.onRequest(async (req, res) => {
                         cursor = cursor - 20;
                     }
 
+                    if (jsonObject.hasOwnProperty('qr')) {
+                        console.log("dibuixant QR");
+
+                        const qr = jsonObject.qr
+                        const qrCodeBase64 = qr.slice(22);
+
+                        console.log(qrCodeBase64);
+
+                        // Decode the base64 string into a Uint8Array
+                        const qrCodeBytes = Uint8Array.from(atob(qrCodeBase64), (c) => c.charCodeAt(0));
+
+                        // Embed the QR code image in the PDF
+                        const qrCodeImage = await pdfDoc.embedPng(qrCodeBytes);
+                        const qrCodeDims = qrCodeImage.scale(0.5);
+
+                        // Draw the QR code image on the page
+                        page.drawImage(qrCodeImage, {
+                            x: page.getWidth() / 2 - qrCodeDims.width / 2,
+                            y: page.getHeight() / 2 - qrCodeDims.height / 2 - 100,
+                            width: qrCodeDims.width,
+                            height: qrCodeDims.height,
+                        });
+                    }
+
 
                         page.drawImage(jpgImage, {
                             x: page.getWidth() / 2 - jpgDims.width / 2,
-                            y: page.getHeight() / 2 - jpgDims.height / 2 + 250,
+                            y: page.getHeight() / 2 - jpgDims.height / 2 + 150,
                             width: jpgDims.width,
                             height: jpgDims.height,
                         });
 
 
-                    // Draw the QR code image on the page
-                    page.drawImage(qrCodeImage, {
-                        x: page.getWidth() / 2 - qrCodeDims.width / 2,
-                        y: page.getHeight() / 2 - qrCodeDims.height / 2,
-                        width: qrCodeDims.width,
-                        height: qrCodeDims.height,
-                    });
+
 
 
 /*
