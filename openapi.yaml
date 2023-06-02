@@ -1,0 +1,79 @@
+openapi: 3.0.0
+info:
+  title: JSON2PDF by LiciCat
+  description: |-
+    API for generating a PDF file from a JSON
+    
+    This API was specifically designed to work for our classmates and their project, therefore information will only be displayed on the PDF if they fit certain keys as to provide the group with a personalized PDF file with all elements well designed.
+  version: 1.0.0
+
+servers:
+  - url: https://us-central1-apilicicat.cloudfunctions.net
+
+tags:
+  - name: Generate PDF
+    description: Convert your JSON to a PDF file
+
+paths:
+  /generatePDF:
+    post:
+      tags:
+        - Generate PDF
+      summary: Convert  JSON to PDF
+      description: Generate a PDF file from the given JSON object.
+      operationId: generatePDF
+      requestBody:
+        description: The only Key-Value pairs that will be displayed are<br>esdeveniment:text<br>data:text<br>hora:text<br>nom:text<br>qr:Base64 econding of a link<br>foto:uri<br><br>No specific key-value paris are required, only the desired ones can be sent.<br>Any other key value pairs will be ignored.
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PDFRequest'
+      responses:
+        '200':
+          description: PDF file generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+              example: "%PDF-1.7\n..."
+        '400':
+          description: bad request
+        '401':
+          description: Invalid JSON
+          
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    PDFRequest:
+      type: object
+      properties:
+        qr:
+          type: string
+          example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAADDUlEQVR4nO2cS27bShBFT6UJeEgBbwFeCrUzI0vKDsilaAEGmkMDFO4bdHWTjkeJDEqhigODHx2oGyrU51bRJv74mH78OQMBBRRQQAEFFNAxIfOjw87lssPsBHaeO2CuHzjfZXkB7Q8NkqQMTCfQCGjkahrL8yRJ0mdov+UFtD80NwfA1c+GnGT2+mGA+427LS+gu0FSTmLIHkk0zh5Jvv2bAvo3oJI4TK8fBv2CnUlfFYt/bE8B/Q3US2v2wHDpAJLKJYCk5X7LC2hvaDIzLy6KU0hiuHTYW04CrqXUuNfyAtoPKtniGhgES40am3ufI8eD7ymgWyBKVTmsIaFfSjG6eUqvkm2WKnV88D0FdAvEqjNo7CU3hn7xxMHtwM+KKhEWcWSo+ohcswf6hWIRYyszytNqL2ERh4aaj/DfXGP5s6Cxr55hxIWK8BHHh2ogaE5hyOBRo2pVGklyAwmLODrUcsdlaxvKqXoLoDiP8BHPAVU7IHmnq1UdUqb5jeQpRFjE00C9y9b6ecKbXGeS7C1fzZ/O0Q1/Imi4vIjJOmDta7Rjsg6m11CxnwcyOwH0kr1J0rgxi+TJREk577K8gHZXsaF/N4aLocnSwqBrJ+YOwYeVy2n1Gg++p4BugZqKrSpOfc4xi1KZkzzHjMzy6FCrOVsjI9MiRNKqYrtMFRZxdGjT6fK+Rv5Nkqodjo1k8eB7CugWqM1OJhl0i2DpoM/A/CImA6YzMPzqsGHcd3kB7Q61ThfeyGh5hKtW+tIcDx9xaGg7AVEShxo/vK/RBic8foRFHBxCn49yc2MW+m1mIizi4FDJI6rUkBaG0bUHGy4G9O8dzP8tsE5lP/ieAvoGqLSxMuWdLnvL4PN17Sz6Gs8B1VpjPsHwC2B+kQGI+eQTt0Wu7HP1JQ++p4Bugbqvt67G9CqMfukoZWn/3om5ydgPvqeAvhPyOZnZX/ArrVBI8mbYnZcX0G5Qm5casr/EtTY7i21E7/M5oM10PrRelitU67t9dS43qs/DQxb/mSyggAIKKKCAAvpL6H8z7GIAtV7FHAAAAABJRU5ErkJggg=="
+          format: byte
+          description: The QR code image in Base64 format
+        data:
+          type: string
+          example: "23 / 03 / 2023"
+          description: The date of the event
+        esdeveniment:
+          type: string
+          example: "Cicle de conferències i debats \"Paraules de Ciència\""
+          description: The description of the event
+        foto:
+          type: string
+          example: "https://media.istockphoto.com/id/1196829950/es/vector/mapa-de-catalu%C3%B1a.jpg?s=612x612&w=0&k=20&c=gpj1h9o-_o6Rm9rFmpo3kgf-_R2SkpLabThu78W2wUs="
+          format: uri
+          description: The URL of the event image
+        hora:
+          type: string
+          example: "12:00"
+          description: The time of the event
+        nom:
+          type: string
+          example: "Pau"
+          description: The name of the event
